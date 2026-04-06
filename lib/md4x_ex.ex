@@ -21,6 +21,7 @@ defmodule Md4xEx do
   - markdown - The markdown string to render
   - opts - Optional keyword list of options:
     - `:heal` - Enable healing of incomplete markdown (default: false)
+    - `:full` - Generate full HTML document with DOCTYPE, html, head, body tags (default: false)
 
   ## Returns
 
@@ -80,6 +81,8 @@ defmodule Md4xEx do
   - markdown - The markdown string to render
   - opts - Optional keyword list of options:
     - `:heal` - Enable healing of incomplete markdown (default: false)
+    - `:show_urls` - Show link URLs after link text (default: false)
+    - `:show_frontmatter` - Show frontmatter content as dim text (default: false)
 
   ## Returns
 

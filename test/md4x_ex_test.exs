@@ -200,9 +200,32 @@ defmodule Md4xExTest do
       assert is_binary(html)
     end
 
+    test "renders with full document option" do
+      markdown = "# Hello"
+      assert {:ok, html} = Md4xEx.render_to_html(markdown, full: true)
+      assert is_binary(html)
+      assert html =~ "<!DOCTYPE html>"
+      assert html =~ "<html"
+      assert html =~ "<head>"
+      assert html =~ "<body>"
+    end
+
+    test "renders with heal and full options" do
+      markdown = "Hello **world"
+      assert {:ok, html} = Md4xEx.render_to_html(markdown, heal: true, full: true)
+      assert is_binary(html)
+      assert html =~ "<!DOCTYPE html>"
+    end
+
     test "renders with empty options" do
       assert {:ok, html} = Md4xEx.render_to_html("# Hello", [])
       assert html =~ "<h1>Hello</h1>"
+    end
+
+    test "renders without full html by default" do
+      assert {:ok, html} = Md4xEx.render_to_html("# Hello")
+      refute html =~ "<!DOCTYPE html>"
+      refute html =~ "<html"
     end
   end
 
@@ -243,6 +266,74 @@ defmodule Md4xExTest do
     test "renders with empty options" do
       assert {:ok, ansi} = Md4xEx.render_to_ansi("# Hello", [])
       assert is_binary(ansi)
+    end
+
+    test "renders with show_urls option" do
+      markdown = "[Example](https://example.com)"
+      assert {:ok, ansi} = Md4xEx.render_to_ansi(markdown, show_urls: true)
+      assert is_binary(ansi)
+      assert ansi =~ "Example"
+      assert ansi =~ "https://example.com"
+    end
+
+    test "renders without visible URLs by default" do
+      markdown = "[Example](https://example.com)"
+      assert {:ok, ansi} = Md4xEx.render_to_ansi(markdown)
+      assert ansi =~ "Example"
+      # URLs are embedded in OSC 8 hyperlinks but not shown as visible text
+      # The visible URL text appears as " (URL)" when showUrls is true
+      refute ansi =~ "(https://example.com)"
+    end
+
+    test "renders with show_frontmatter option" do
+      markdown = """
+      ---
+      title: My Document
+      author: John Doe
+      ---
+
+      # Hello World
+      """
+
+      assert {:ok, ansi} = Md4xEx.render_to_ansi(markdown, show_frontmatter: true)
+      assert is_binary(ansi)
+      assert ansi =~ "title"
+      assert ansi =~ "My Document"
+    end
+
+    test "hides frontmatter by default" do
+      markdown = """
+      ---
+      title: My Document
+      ---
+
+      # Hello World
+      """
+
+      assert {:ok, ansi} = Md4xEx.render_to_ansi(markdown)
+      refute ansi =~ "title"
+      refute ansi =~ "My Document"
+    end
+
+    test "renders with heal, show_urls, and show_frontmatter options" do
+      markdown = """
+      ---
+      title: Test
+      ---
+
+      Hello **world [link](https://example.com)
+      """
+
+      assert {:ok, ansi} =
+               Md4xEx.render_to_ansi(markdown,
+                 heal: true,
+                 show_urls: true,
+                 show_frontmatter: true
+               )
+
+      assert is_binary(ansi)
+      assert ansi =~ "title"
+      assert ansi =~ "https://example.com"
     end
   end
 

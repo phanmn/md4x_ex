@@ -95,16 +95,23 @@ Renders markdown to HTML.
 - `markdown` (String.t()) - The markdown string to render
 - `opts` (keyword list, optional) - Rendering options:
   - `:heal` (boolean) - Enable healing of incomplete markdown (default: false)
+  - `:full` (boolean) - Generate full HTML document with `<!DOCTYPE>`, `<html>`, `<head>`, and `<body>` tags (default: false)
+  - `:debug` (boolean) - Enable debug output to stderr (default: false)
+  - `:verbatim_entities` (boolean) - Output HTML entities as verbatim character references (default: false)
+  - `:skip_utf8_bom` (boolean) - Skip UTF-8 BOM in output (default: false)
+  - `:code_meta` (boolean) - Include code block metadata in output (default: false)
 
 **Returns:**
 
 - `{:ok, html}` (String.t()) - The rendered HTML
 - `{:error, reason}` - Error tuple if rendering fails
 
-**Example:**
+**Examples:**
 
 ```elixir
 {:ok, html} = Md4xEx.render_to_html("# Hello", [heal: true])
+{:ok, html} = Md4xEx.render_to_html("# Hello", [full: true])
+{:ok, html} = Md4xEx.render_to_html("# Hello", [heal: true, full: true])
 ```
 
 ### `render_to_ast/2`
@@ -115,6 +122,8 @@ Renders markdown to a JSON AST representation.
 
 - `markdown` (String.t()) - The markdown string to render
 - `opts` (keyword list, optional) - Rendering options:
+  - `:debug` (boolean) - Enable debug output to stderr (default: false)
+  - `:skip_utf8_bom` (boolean) - Skip UTF-8 BOM in output (default: false)
   - `:heal` (boolean) - Enable healing of incomplete markdown (default: false)
 
 **Returns:**
@@ -122,10 +131,12 @@ Renders markdown to a JSON AST representation.
 - `{:ok, json}` (String.t()) - JSON string containing the AST with structure: `{"nodes":[...],"frontmatter":{...},"meta":{}}`
 - `{:error, reason}` - Error tuple if rendering fails
 
-**Example:**
+**Examples:**
 
 ```elixir
+{:ok, json} = Md4xEx.render_to_ast("# Hello")
 {:ok, json} = Md4xEx.render_to_ast("# Hello", [heal: true])
+{:ok, json} = Md4xEx.render_to_ast("# Hello", [debug: true])
 ```
 
 ### `extract_meta/2`
@@ -136,6 +147,8 @@ Extracts metadata (frontmatter YAML and document structure) from markdown.
 
 - `markdown` (String.t()) - The markdown string to extract metadata from
 - `opts` (keyword list, optional) - Rendering options:
+  - `:debug` (boolean) - Enable debug output to stderr (default: false)
+  - `:skip_utf8_bom` (boolean) - Skip UTF-8 BOM in output (default: false)
   - `:heal` (boolean) - Enable healing of incomplete markdown (default: false)
 
 **Returns:**
@@ -143,10 +156,12 @@ Extracts metadata (frontmatter YAML and document structure) from markdown.
 - `{:ok, json}` (String.t()) - JSON string containing frontmatter and metadata
 - `{:error, reason}` - Error tuple if extraction fails
 
-**Example:**
+**Examples:**
 
 ```elixir
+{:ok, json} = Md4xEx.extract_meta(markdown)
 {:ok, json} = Md4xEx.extract_meta(markdown, [heal: true])
+{:ok, json} = Md4xEx.extract_meta(markdown, [debug: true])
 ```
 
 ### `render_to_ansi/2`
@@ -158,16 +173,25 @@ Renders markdown to ANSI terminal output with colors and styling.
 - `markdown` (String.t()) - The markdown string to render
 - `opts` (keyword list, optional) - Rendering options:
   - `:heal` (boolean) - Enable healing of incomplete markdown (default: false)
+  - `:show_urls` (boolean) - Show URLs as visible text after links (default: false)
+  - `:show_frontmatter` (boolean) - Include frontmatter YAML in output (default: false)
+  - `:debug` (boolean) - Enable debug output to stderr (default: false)
+  - `:skip_utf8_bom` (boolean) - Skip UTF-8 BOM in output (default: false)
+  - `:no_color` (boolean) - Disable ANSI color codes (default: false)
+  - `:code_meta` (boolean) - Include code block metadata in output (default: false)
 
 **Returns:**
 
 - `{:ok, ansi}` (String.t()) - ANSI escape code string for terminal rendering
 - `{:error, reason}` - Error tuple if rendering fails
 
-**Example:**
+**Examples:**
 
 ```elixir
+{:ok, ansi} = Md4xEx.render_to_ansi("# Hello")
 {:ok, ansi} = Md4xEx.render_to_ansi("# Hello", [heal: true])
+{:ok, ansi} = Md4xEx.render_to_ansi("[link](https://example.com)", [show_urls: true])
+{:ok, ansi} = Md4xEx.render_to_ansi(markdown, [show_frontmatter: true])
 ```
 
 ### `render_to_text/2`
@@ -178,6 +202,8 @@ Renders markdown to plain text by stripping all formatting.
 
 - `markdown` (String.t()) - The markdown string to render
 - `opts` (keyword list, optional) - Rendering options:
+  - `:debug` (boolean) - Enable debug output to stderr (default: false)
+  - `:skip_utf8_bom` (boolean) - Skip UTF-8 BOM in output (default: false)
   - `:heal` (boolean) - Enable healing of incomplete markdown (default: false)
 
 **Returns:**
@@ -189,6 +215,7 @@ Renders markdown to plain text by stripping all formatting.
 
 ```elixir
 {:ok, text} = Md4xEx.render_to_text("# Hello", [heal: true])
+{:ok, text} = Md4xEx.render_to_text("# Hello", [debug: true])
 ```
 
 ### `render_to_markdown/2`
@@ -199,6 +226,8 @@ Renders markdown back to normalized/canonicalized markdown.
 
 - `markdown` (String.t()) - The markdown string to normalize
 - `opts` (keyword list, optional) - Rendering options:
+  - `:debug` (boolean) - Enable debug output to stderr (default: false)
+  - `:skip_utf8_bom` (boolean) - Skip UTF-8 BOM in output (default: false)
   - `:heal` (boolean) - Enable healing of incomplete markdown (default: false)
 
 **Returns:**
@@ -210,6 +239,7 @@ Renders markdown back to normalized/canonicalized markdown.
 
 ```elixir
 {:ok, md} = Md4xEx.render_to_markdown("# Hello", [heal: true])
+{:ok, md} = Md4xEx.render_to_markdown("# Hello", [debug: true])
 ```
 
 ### `heal/1`

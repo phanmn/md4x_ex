@@ -89,24 +89,190 @@ static ERL_NIF_TERM make_ok_binary(ErlNifEnv *env, const char *data, size_t size
 
 
 
-// Helper to parse options map
-// For simplicity, we just check if the second argument is a non-empty map
-// and assume it contains heal: true
-static unsigned parse_options(ErlNifEnv *env, ERL_NIF_TERM opts) {
+// Helper to parse boolean value from Erlang term
+static int get_bool_value(ErlNifEnv *env, ERL_NIF_TERM val, int default_val) {
+    char atom_buf[64];
+    
+    // Try to get the atom as a string
+    if (enif_get_atom(env, val, atom_buf, sizeof(atom_buf), ERL_NIF_LATIN1)) {
+        if (strcmp(atom_buf, "true") == 0) {
+            return 1;
+        } else if (strcmp(atom_buf, "false") == 0) {
+            return 0;
+        }
+    }
+    
+    return default_val;
+}
+
+// Helper to get boolean value from keyword list (list of tuples)
+// Elixir keyword lists are passed as [{key, value}, ...]
+static int kwlist_get_bool(ErlNifEnv *env, ERL_NIF_TERM list, const char *key, int default_val) {
+    if (!enif_is_list(env, list)) {
+        return default_val;
+    }
+    
+    // Check if it's an empty list
+    ERL_NIF_TERM head, tail = list;
+    if (!enif_get_list_cell(env, tail, &head, &tail)) {
+        return default_val;
+    }
+    
+    // Iterate through the list
+    do {
+        // Check if head is a 2-element tuple
+        int arity = 2;
+        const ERL_NIF_TERM *tuple_items;
+        if (enif_get_tuple(env, head, &arity, &tuple_items) && arity == 2) {
+            char atom_buf[64];
+            if (enif_get_atom(env, tuple_items[0], atom_buf, sizeof(atom_buf), ERL_NIF_LATIN1)) {
+                if (strcmp(atom_buf, key) == 0) {
+                    return get_bool_value(env, tuple_items[1], default_val);
+                }
+            }
+        }
+    } while (enif_get_list_cell(env, tail, &head, &tail));
+    
+    return default_val;
+}
+
+// Parse HTML renderer options from keyword list
+static unsigned parse_html_options(ErlNifEnv *env, ERL_NIF_TERM opts) {
     unsigned flags = 0;
     
-    // Simple approach: if opts is provided and is not an empty list,
-    // we enable the heal flag
-    // This is a simplified implementation for compatibility
-    if (enif_is_map(env, opts)) {
-        size_t map_size;
-        enif_get_map_size(env, opts, &map_size);
-        
-        if (map_size > 0) {
-            // For now, just enable heal if any options are provided
-            // A more sophisticated implementation would parse the actual options
-            flags |= 0x0100; // MD_*_FLAG_HEAL
-        }
+    if (kwlist_get_bool(env, opts, "heal", 0)) {
+        flags |= 0x0100; // MD_HTML_FLAG_HEAL
+    }
+    
+    if (kwlist_get_bool(env, opts, "full", 0)) {
+        flags |= 0x0008; // MD_HTML_FLAG_FULL_HTML
+    }
+    
+    if (kwlist_get_bool(env, opts, "debug", 0)) {
+        flags |= 0x0001; // MD_HTML_FLAG_DEBUG
+    }
+    
+    if (kwlist_get_bool(env, opts, "verbatim_entities", 0)) {
+        flags |= 0x0002; // MD_HTML_FLAG_VERBATIM_ENTITIES
+    }
+    
+    if (kwlist_get_bool(env, opts, "skip_utf8_bom", 0)) {
+        flags |= 0x0004; // MD_HTML_FLAG_SKIP_UTF8_BOM
+    }
+    
+    if (kwlist_get_bool(env, opts, "code_meta", 0)) {
+        flags |= 0x0010; // MD_HTML_FLAG_CODE_META
+    }
+    
+    return flags;
+}
+
+// Parse AST renderer options from keyword list
+static unsigned parse_ast_options(ErlNifEnv *env, ERL_NIF_TERM opts) {
+    unsigned flags = 0;
+    
+    if (kwlist_get_bool(env, opts, "debug", 0)) {
+        flags |= 0x0001; // MD_AST_FLAG_DEBUG
+    }
+    
+    if (kwlist_get_bool(env, opts, "skip_utf8_bom", 0)) {
+        flags |= 0x0002; // MD_AST_FLAG_SKIP_UTF8_BOM
+    }
+    
+    if (kwlist_get_bool(env, opts, "heal", 0)) {
+        flags |= 0x0100; // MD_AST_FLAG_HEAL
+    }
+    
+    return flags;
+}
+
+// Parse Meta renderer options from keyword list
+static unsigned parse_meta_options(ErlNifEnv *env, ERL_NIF_TERM opts) {
+    unsigned flags = 0;
+    
+    if (kwlist_get_bool(env, opts, "debug", 0)) {
+        flags |= 0x0001; // MD_META_FLAG_DEBUG
+    }
+    
+    if (kwlist_get_bool(env, opts, "skip_utf8_bom", 0)) {
+        flags |= 0x0002; // MD_META_FLAG_SKIP_UTF8_BOM
+    }
+    
+    if (kwlist_get_bool(env, opts, "heal", 0)) {
+        flags |= 0x0100; // MD_META_FLAG_HEAL
+    }
+    
+    return flags;
+}
+
+// Parse ANSI renderer options from keyword list
+static unsigned parse_ansi_options(ErlNifEnv *env, ERL_NIF_TERM opts) {
+    unsigned flags = 0;
+    
+    if (kwlist_get_bool(env, opts, "heal", 0)) {
+        flags |= 0x0100; // MD_ANSI_FLAG_HEAL
+    }
+    
+    if (kwlist_get_bool(env, opts, "show_urls", 0)) {
+        flags |= 0x0010; // MD_ANSI_FLAG_SHOW_URLS
+    }
+    
+    if (kwlist_get_bool(env, opts, "show_frontmatter", 0)) {
+        flags |= 0x0020; // MD_ANSI_FLAG_SHOW_FRONTMATTER
+    }
+    
+    if (kwlist_get_bool(env, opts, "debug", 0)) {
+        flags |= 0x0001; // MD_ANSI_FLAG_DEBUG
+    }
+    
+    if (kwlist_get_bool(env, opts, "skip_utf8_bom", 0)) {
+        flags |= 0x0002; // MD_ANSI_FLAG_SKIP_UTF8_BOM
+    }
+    
+    if (kwlist_get_bool(env, opts, "no_color", 0)) {
+        flags |= 0x0004; // MD_ANSI_FLAG_NO_COLOR
+    }
+    
+    if (kwlist_get_bool(env, opts, "code_meta", 0)) {
+        flags |= 0x0008; // MD_ANSI_FLAG_CODE_META
+    }
+    
+    return flags;
+}
+
+// Parse Text renderer options from keyword list
+static unsigned parse_text_options(ErlNifEnv *env, ERL_NIF_TERM opts) {
+    unsigned flags = 0;
+    
+    if (kwlist_get_bool(env, opts, "debug", 0)) {
+        flags |= 0x0001; // MD_TEXT_FLAG_DEBUG
+    }
+    
+    if (kwlist_get_bool(env, opts, "skip_utf8_bom", 0)) {
+        flags |= 0x0002; // MD_TEXT_FLAG_SKIP_UTF8_BOM
+    }
+    
+    if (kwlist_get_bool(env, opts, "heal", 0)) {
+        flags |= 0x0100; // MD_TEXT_FLAG_HEAL
+    }
+    
+    return flags;
+}
+
+// Parse Markdown renderer options from keyword list
+static unsigned parse_markdown_options(ErlNifEnv *env, ERL_NIF_TERM opts) {
+    unsigned flags = 0;
+    
+    if (kwlist_get_bool(env, opts, "debug", 0)) {
+        flags |= 0x0001; // MD_MARKDOWN_FLAG_DEBUG
+    }
+    
+    if (kwlist_get_bool(env, opts, "skip_utf8_bom", 0)) {
+        flags |= 0x0002; // MD_MARKDOWN_FLAG_SKIP_UTF8_BOM
+    }
+    
+    if (kwlist_get_bool(env, opts, "heal", 0)) {
+        flags |= 0x0100; // MD_MARKDOWN_FLAG_HEAL
     }
     
     return flags;
@@ -129,11 +295,12 @@ static ERL_NIF_TERM nif_render_to_html(ErlNifEnv *env, int argc, const ERL_NIF_T
     
     unsigned renderer_flags = 0;
     if (argc == 2) {
-        renderer_flags = parse_options(env, argv[1]);
+        renderer_flags = parse_html_options(env, argv[1]);
     }
     
     OutputBuffer buf;
     init_buffer(&buf);
+
     
     if (!buf.data) {
         return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "enomem"));
@@ -172,7 +339,7 @@ static ERL_NIF_TERM nif_render_to_ast(ErlNifEnv *env, int argc, const ERL_NIF_TE
     
     unsigned renderer_flags = 0;
     if (argc == 2) {
-        renderer_flags = parse_options(env, argv[1]);
+        renderer_flags = parse_ast_options(env, argv[1]);
     }
     
     OutputBuffer buf;
@@ -215,7 +382,7 @@ static ERL_NIF_TERM nif_extract_meta(ErlNifEnv *env, int argc, const ERL_NIF_TER
     
     unsigned renderer_flags = 0;
     if (argc == 2) {
-        renderer_flags = parse_options(env, argv[1]);
+        renderer_flags = parse_meta_options(env, argv[1]);
     }
     
     OutputBuffer buf;
@@ -258,7 +425,7 @@ static ERL_NIF_TERM nif_render_to_ansi(ErlNifEnv *env, int argc, const ERL_NIF_T
     
     unsigned renderer_flags = 0;
     if (argc == 2) {
-        renderer_flags = parse_options(env, argv[1]);
+        renderer_flags = parse_ansi_options(env, argv[1]);
     }
     
     OutputBuffer buf;
@@ -300,7 +467,7 @@ static ERL_NIF_TERM nif_render_to_text(ErlNifEnv *env, int argc, const ERL_NIF_T
     
     unsigned renderer_flags = 0;
     if (argc == 2) {
-        renderer_flags = parse_options(env, argv[1]);
+        renderer_flags = parse_text_options(env, argv[1]);
     }
     
     OutputBuffer buf;
@@ -342,7 +509,7 @@ static ERL_NIF_TERM nif_render_to_markdown(ErlNifEnv *env, int argc, const ERL_N
     
     unsigned renderer_flags = 0;
     if (argc == 2) {
-        renderer_flags = parse_options(env, argv[1]);
+        renderer_flags = parse_markdown_options(env, argv[1]);
     }
     
     OutputBuffer buf;
