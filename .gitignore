@@ -1,0 +1,11 @@
+# Build artifacts
+_build/
+build/
+.erl_crash.dump
+
+# Dependencies
+deps/
+priv/*.so
+
+# OS files
+.DS_Store
