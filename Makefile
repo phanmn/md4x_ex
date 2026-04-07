@@ -3,21 +3,23 @@
 
 # System type and platform-specific flags (use gnu99 for POSIX extensions like strdup)
 UNAME_SYS := $(shell uname -s)
+LDFLAGS = -shared
 ifeq ($(UNAME_SYS), Darwin)
 	CC ?= cc
 	CFLAGS += -O3 -std=gnu99 -finline-functions
-	LDFLAGS ?= -flat_namespace -undefined suppress
+	LDFLAGS += -flat_namespace -Wl,-undefined,dynamic_lookup
 else ifeq ($(UNAME_SYS), FreeBSD)
 	CC = /usr/bin/clang
 	CFLAGS += -O3 -std=gnu99 -finline-functions
+	LDFLAGS += -rdynamic
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= gcc
 	CFLAGS += -O3 -std=gnu99 -finline-functions
+	LDFLAGS += -rdynamic
 endif
 
 # Global flags
 CFLAGS += -Wall -Wextra -DHAVE_CONFIG_H -fPIC
-LDFLAGS ?= -shared -rdynamic
 
 # Find Erlang NIF include directory (ERTS include dir contains erl_nif.h)
 ERTS_INCLUDE_DIR ?= $(shell erl -noshell -eval "io:format(\"~s/erts-~s/include/\", [code:root_dir(), erlang:system_info(version)])." -s init stop 2>/dev/null)
