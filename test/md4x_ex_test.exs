@@ -395,4 +395,45 @@ defmodule Md4xExTest do
       assert healed == ""
     end
   end
+
+  describe "bang versions" do
+    test "render_to_html!/1 returns html directly" do
+      assert "<h1>Hello</h1>\n" == Md4xEx.render_to_html!("# Hello")
+    end
+
+    test "render_to_html!/2 with options" do
+      assert html = Md4xEx.render_to_html!("# Hello", full: true)
+      assert html =~ "<!DOCTYPE html>"
+    end
+
+    test "render_to_ast!/1 returns json directly" do
+      assert json = Md4xEx.render_to_ast!("# Hello")
+      assert json =~ "h1"
+    end
+
+    test "render_to_ansi!/1 returns ansi directly" do
+      assert ansi = Md4xEx.render_to_ansi!("# Hello")
+      assert is_binary(ansi)
+    end
+
+    test "render_to_text!/1 returns text directly" do
+      assert text = Md4xEx.render_to_text!("# Hello")
+      assert text =~ "Hello"
+    end
+
+    test "render_to_markdown!/1 returns markdown directly" do
+      assert md = Md4xEx.render_to_markdown!("# Hello")
+      assert md =~ "Hello"
+    end
+
+    test "extract_meta!/1 returns meta directly" do
+      markdown = "---\ntitle: Test\n---\n# Hello"
+      assert meta = Md4xEx.extract_meta!(markdown)
+      assert meta =~ "Test"
+    end
+
+    test "heal!/1 returns healed markdown directly" do
+      assert "Hello **world**" == Md4xEx.heal!("Hello **world**")
+    end
+  end
 end

@@ -38,6 +38,31 @@ defmodule Md4xEx do
   end
 
   @doc """
+  Renders markdown to HTML, raising an error on failure.
+
+  ## Parameters
+
+  - markdown - The markdown string to render
+  - opts - Optional keyword list of options
+
+  ## Returns
+
+  - html string on success
+  - raises ArgumentError on failure
+
+  ## Examples
+
+      iex> Md4xEx.render_to_html!("# Hello")
+      "<h1>Hello</h1>\\n"
+  """
+  def render_to_html!(markdown, opts \\ []) when is_binary(markdown) and is_list(opts) do
+    case render_to_html(markdown, opts) do
+      {:ok, html} -> html
+      {:error, reason} -> raise ArgumentError, message: to_string(reason)
+    end
+  end
+
+  @doc """
   Renders markdown to JSON (AST representation).
 
   ## Parameters
@@ -56,6 +81,26 @@ defmodule Md4xEx do
   end
 
   @doc """
+  Renders markdown to JSON (AST representation), raising an error on failure.
+
+  ## Parameters
+
+  - markdown - The markdown string to render
+  - opts - Optional keyword list of options
+
+  ## Returns
+
+  - json string on success
+  - raises ArgumentError on failure
+  """
+  def render_to_ast!(markdown, opts \\ []) when is_binary(markdown) and is_list(opts) do
+    case render_to_ast(markdown, opts) do
+      {:ok, json} -> json
+      {:error, reason} -> raise ArgumentError, message: to_string(reason)
+    end
+  end
+
+  @doc """
   Extracts metadata (frontmatter) from markdown.
 
   ## Parameters
@@ -71,6 +116,26 @@ defmodule Md4xEx do
   """
   def extract_meta(markdown, opts \\ []) when is_binary(markdown) and is_list(opts) do
     :erlang.nif_error(:nif_not_loaded)
+  end
+
+  @doc """
+  Extracts metadata (frontmatter) from markdown, raising an error on failure.
+
+  ## Parameters
+
+  - markdown - The markdown string with YAML frontmatter
+  - opts - Optional keyword list of options
+
+  ## Returns
+
+  - metadata JSON string on success
+  - raises ArgumentError on failure
+  """
+  def extract_meta!(markdown, opts \\ []) when is_binary(markdown) and is_list(opts) do
+    case extract_meta(markdown, opts) do
+      {:ok, meta} -> meta
+      {:error, reason} -> raise ArgumentError, message: to_string(reason)
+    end
   end
 
   @doc """
@@ -100,6 +165,26 @@ defmodule Md4xEx do
   end
 
   @doc """
+  Renders markdown to ANSI terminal output, raising an error on failure.
+
+  ## Parameters
+
+  - markdown - The markdown string to render
+  - opts - Optional keyword list of options
+
+  ## Returns
+
+  - ansi string on success
+  - raises ArgumentError on failure
+  """
+  def render_to_ansi!(markdown, opts \\ []) when is_binary(markdown) and is_list(opts) do
+    case render_to_ansi(markdown, opts) do
+      {:ok, ansi} -> ansi
+      {:error, reason} -> raise ArgumentError, message: to_string(reason)
+    end
+  end
+
+  @doc """
   Renders markdown to plain text (strips all formatting).
 
   ## Parameters
@@ -118,6 +203,26 @@ defmodule Md4xEx do
   end
 
   @doc """
+  Renders markdown to plain text, raising an error on failure.
+
+  ## Parameters
+
+  - markdown - The markdown string to render
+  - opts - Optional keyword list of options
+
+  ## Returns
+
+  - plain text string on success
+  - raises ArgumentError on failure
+  """
+  def render_to_text!(markdown, opts \\ []) when is_binary(markdown) and is_list(opts) do
+    case render_to_text(markdown, opts) do
+      {:ok, text} -> text
+      {:error, reason} -> raise ArgumentError, message: to_string(reason)
+    end
+  end
+
+  @doc """
   Renders markdown back to markdown (normalization/canonicalization).
 
   ## Parameters
@@ -133,6 +238,26 @@ defmodule Md4xEx do
   """
   def render_to_markdown(markdown, opts \\ []) when is_binary(markdown) and is_list(opts) do
     :erlang.nif_error(:nif_not_loaded)
+  end
+
+  @doc """
+  Renders markdown back to markdown, raising an error on failure.
+
+  ## Parameters
+
+  - markdown - The markdown string to render
+  - opts - Optional keyword list of options
+
+  ## Returns
+
+  - normalized markdown string on success
+  - raises ArgumentError on failure
+  """
+  def render_to_markdown!(markdown, opts \\ []) when is_binary(markdown) and is_list(opts) do
+    case render_to_markdown(markdown, opts) do
+      {:ok, md} -> md
+      {:error, reason} -> raise ArgumentError, message: to_string(reason)
+    end
   end
 
   @doc """
@@ -158,5 +283,29 @@ defmodule Md4xEx do
   """
   def heal(markdown) when is_binary(markdown) do
     :erlang.nif_error(:nif_not_loaded)
+  end
+
+  @doc """
+  Heals incomplete streaming markdown, raising an error on failure.
+
+  ## Parameters
+
+  - markdown - The potentially incomplete markdown string to heal
+
+  ## Returns
+
+  - healed markdown string on success
+  - raises ArgumentError on failure
+
+  ## Examples
+
+      iex> Md4xEx.heal!("Hello **world")
+      "Hello **world**"
+  """
+  def heal!(markdown) when is_binary(markdown) do
+    case heal(markdown) do
+      {:ok, healed} -> healed
+      {:error, reason} -> raise ArgumentError, message: to_string(reason)
+    end
   end
 end
